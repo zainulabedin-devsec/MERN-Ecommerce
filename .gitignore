@@ -1,0 +1,20 @@
+# Dependencies
+Frontend/node_modules/
+Backend/node_modules/
+
+# Environment variables
+Frontend/.env
+Backend/.env
+.env
+.env.*
+
+# Build files
+Frontend/dist/
+Backend/dist/
+
+# Uploads and logs
+Backend/uploads/
+Backend/logs/
+
+# Logs
+*.log
