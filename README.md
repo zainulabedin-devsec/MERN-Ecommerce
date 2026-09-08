@@ -163,8 +163,8 @@ The application uses **Nodemailer** to send automated emails for:
              │                 │                 │
              ▼                 ▼                 ▼
       ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
-      │ MongoDB     │   │ Cloudinary  │   │  Nodemailer │
-      │   Atlas     │   │   Images    │   │    Email    │
+      │ MongoDB     │   │ Cloudinary  │   │    Brevo    │
+      │   Atlas     │   │   Images    │   |             │
       └─────────────┘   └─────────────┘   └─────────────┘
 ```
 
@@ -245,9 +245,7 @@ CLIENT_URL=http://localhost:5173
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-
-EMAIL_USER=your_email
-EMAIL_PASS=your_email_password
+BREVO_API_KEY=your_brevo_api_key
 ```
 
 Start the development server:
@@ -309,8 +307,7 @@ Sensitive information such as:
 * MongoDB credentials
 * JWT secrets
 * Cloudinary API credentials
-* Email passwords
-* API keys
+* BREVO_API_KEY
 
 should be stored in environment variables.
 
@@ -320,7 +317,7 @@ Example:
 MONGO_URI=your_database_url
 JWT_SECRET=your_secret
 CLOUDINARY_API_SECRET=your_secret
-EMAIL_PASS=your_password
+BREVO_API_KEY=your_brevo_api_key
 ```
 
 ---
