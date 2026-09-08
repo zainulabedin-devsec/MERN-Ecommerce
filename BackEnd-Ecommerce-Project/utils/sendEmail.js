@@ -76,11 +76,39 @@ const verifyEmailTransporter = async () => {
 const sendOrderConfirmationEmail = async (order) => {
   try {
     const customerEmail = order.user?.email;
-    const customerName = order.user?.name || "Customer";
+
+    const customerName =
+      order.user?.name ||
+      [order.user?.firstName, order.user?.lastName]
+        .filter(Boolean)
+        .join(" ") ||
+      "Customer";
 
     if (!customerEmail) {
       throw new Error("Customer email is missing");
     }
+
+    // ==================================================
+    // GET ORDER VALUES SAFELY
+    // ==================================================
+    const totalAmount =
+      order.totalAmount ??
+      order.totalPrice ??
+      0;
+
+    const orderStatus =
+      order.orderStatus ??
+      order.status ??
+      "Processing";
+
+    console.log("========================================");
+    console.log("📧 CONFIRMATION EMAIL DATA");
+    console.log("Order ID:", order._id);
+    console.log("Customer Email:", customerEmail);
+    console.log("Customer Name:", customerName);
+    console.log("Total Amount:", totalAmount);
+    console.log("Order Status:", orderStatus);
+    console.log("========================================");
 
     const itemsHtml = order.items
       .map(
@@ -125,7 +153,11 @@ const sendOrderConfirmationEmail = async (order) => {
         </p>
 
         <p>
-          <strong>Total:</strong> $${order.totalAmount}
+          <strong>Total:</strong> $${totalAmount}
+        </p>
+
+        <p>
+          <strong>Status:</strong> ${orderStatus}
         </p>
 
         <table style="
@@ -192,7 +224,11 @@ const sendOrderConfirmationEmail = async (order) => {
         </p>
 
         <p>
-          <strong>Total:</strong> $${order.totalAmount}
+          <strong>Total:</strong> $${totalAmount}
+        </p>
+
+        <p>
+          <strong>Status:</strong> ${orderStatus}
         </p>
 
         <h3>Order Items</h3>
@@ -255,11 +291,39 @@ const sendOrderConfirmationEmail = async (order) => {
 const sendOrderStatusEmail = async (order) => {
   try {
     const customerEmail = order.user?.email;
-    const customerName = order.user?.name || "Customer";
+
+    const customerName =
+      order.user?.name ||
+      [order.user?.firstName, order.user?.lastName]
+        .filter(Boolean)
+        .join(" ") ||
+      "Customer";
 
     if (!customerEmail) {
       throw new Error("Customer email is missing");
     }
+
+    // ==================================================
+    // GET ORDER VALUES SAFELY
+    // ==================================================
+    const totalAmount =
+      order.totalAmount ??
+      order.totalPrice ??
+      0;
+
+    const orderStatus =
+      order.orderStatus ??
+      order.status ??
+      "Processing";
+
+    console.log("========================================");
+    console.log("📧 STATUS EMAIL DATA");
+    console.log("Order ID:", order._id);
+    console.log("Customer Email:", customerEmail);
+    console.log("Customer Name:", customerName);
+    console.log("Total Amount:", totalAmount);
+    console.log("Order Status:", orderStatus);
+    console.log("========================================");
 
     const html = `
       <div style="
@@ -284,8 +348,12 @@ const sendOrderStatusEmail = async (order) => {
         </p>
 
         <p>
+          <strong>Total:</strong> $${totalAmount}
+        </p>
+
+        <p>
           <strong>New Status:</strong>
-          ${order.orderStatus}
+          ${orderStatus}
         </p>
 
         <p style="
@@ -301,7 +369,7 @@ const sendOrderStatusEmail = async (order) => {
 
     const result = await sendEmail({
       to: customerEmail,
-      subject: `📦 Order Status Updated - ${order.orderstatus}`,
+      subject: `📦 Order Status Updated - ${orderStatus}`,
       html,
     });
 
