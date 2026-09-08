@@ -15,29 +15,40 @@ const sendEmail = async ({ to, subject, html, replyTo }) => {
       throw new Error("BREVO_API_KEY is missing");
     }
 
-    const result = await brevo.transactionalEmails.sendTransacEmail({
-      sender: {
-        name: "Zain's Store",
-        email: "toprojecttesting@gmail.com",
-      },
+    console.log(
+      "Brevo key exists:",
+      !!process.env.BREVO_API_KEY
+    );
 
-      to: [
-        {
-          email: to,
+    console.log(
+      "Brevo key length:",
+      process.env.BREVO_API_KEY?.trim().length
+    );
+
+    const result =
+      await brevo.transactionalEmails.sendTransacEmail({
+        sender: {
+          name: "Zain's Store",
+          email: "toprojecttesting@gmail.com",
         },
-      ],
 
-      subject,
-      htmlContent: html,
+        to: [
+          {
+            email: to,
+          },
+        ],
 
-      ...(replyTo
-        ? {
-            replyTo: {
-              email: replyTo,
-            },
-          }
-        : {}),
-    });
+        subject,
+        htmlContent: html,
+
+        ...(replyTo
+          ? {
+              replyTo: {
+                email: replyTo,
+              },
+            }
+          : {}),
+      });
 
     console.log("✅ Email sent successfully:", result);
 
