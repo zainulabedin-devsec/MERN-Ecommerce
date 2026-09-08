@@ -16,9 +16,16 @@ const sendContactMessage = async (req, res) => {
 
     await sendEmail({
       to: adminEmail,
-      subject: `New Contact Message from ${name}`,
+      replyTo: email,
+      subject: `📩 New Contact Message from ${name}`,
+
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 650px; margin: auto; padding: 20px;">
+        <div style="
+          font-family: Arial, sans-serif;
+          max-width: 650px;
+          margin: auto;
+          padding: 20px;
+        ">
 
           <h2 style="color: #4f46e5;">
             📩 New Contact Message
@@ -49,8 +56,12 @@ const sendContactMessage = async (req, res) => {
 
           <hr />
 
-          <p style="color: #666; font-size: 13px;">
-            This message was submitted through your website contact form.
+          <p style="
+            color: #666;
+            font-size: 13px;
+          ">
+            This message was submitted through
+            your Zain's Store website contact form.
           </p>
 
         </div>
@@ -61,6 +72,7 @@ const sendContactMessage = async (req, res) => {
       success: true,
       message: "Message sent successfully",
     });
+
   } catch (error) {
     console.error("Contact form email error:", error);
 

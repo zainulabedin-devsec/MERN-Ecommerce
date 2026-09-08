@@ -9,6 +9,16 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
   },
+
+  // Prevent the request from hanging for a very long time
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000,
+
+  // Keep SMTP connection alive when possible
+  pool: true,
+  maxConnections: 3,
+  maxMessages: 50,
 });
 
 /*
@@ -19,6 +29,14 @@ const transporter = nodemailer.createTransport({
 
 const verifyEmailTransporter = async () => {
   try {
+    if (!process.env.EMAIL_USER) {
+      throw new Error("EMAIL_USER is missing");
+    }
+
+    if (!process.env.EMAIL_PASSWORD) {
+      throw new Error("EMAIL_PASSWORD is missing");
+    }
+
     await transporter.verify();
 
     console.log("========================================");
@@ -39,17 +57,22 @@ const verifyEmailTransporter = async () => {
 |--------------------------------------------------------------------------
 */
 
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({
+  to,
+  subject,
+  html,
+  replyTo = null,
+}) => {
   if (!to) {
     throw new Error("Recipient email is missing");
   }
 
   if (!process.env.EMAIL_USER) {
-    throw new Error("EMAIL_USER is missing from .env");
+    throw new Error("EMAIL_USER is missing");
   }
 
   if (!process.env.EMAIL_PASSWORD) {
-    throw new Error("EMAIL_PASSWORD is missing from .env");
+    throw new Error("EMAIL_PASSWORD is missing");
   }
 
   console.log("========================================");
@@ -57,6 +80,9 @@ const sendEmail = async ({ to, subject, html }) => {
   console.log("FROM:", process.env.EMAIL_USER);
   console.log("TO:", to);
   console.log("SUBJECT:", subject);
+  if (replyTo) {
+    console.log("REPLY-TO:", replyTo);
+  }
   console.log("========================================");
 
   const mailOptions = {
@@ -65,6 +91,10 @@ const sendEmail = async ({ to, subject, html }) => {
     subject,
     html,
   };
+
+  if (replyTo) {
+    mailOptions.replyTo = replyTo;
+  }
 
   const info = await transporter.sendMail(mailOptions);
 
@@ -76,7 +106,13 @@ const sendEmail = async ({ to, subject, html }) => {
   console.log("========================================");
 
   if (info.rejected && info.rejected.length > 0) {
-    throw new Error(`Email rejected for: ${info.rejected.join(", ")}`);
+    throw new Error(
+      `Email rejected for: ${info.rejected.join(", ")}`
+    );
+  }
+
+  if (!info.accepted || info.accepted.length === 0) {
+    throw new Error(`Email was not accepted for: ${to}`);
   }
 
   return info;
@@ -85,13 +121,6 @@ const sendEmail = async ({ to, subject, html }) => {
 /*
 |--------------------------------------------------------------------------
 | Order Confirmation Email
-|--------------------------------------------------------------------------
-|
-| Sends the same order notification to:
-|
-| 1. Customer
-| 2. Admin
-|
 |--------------------------------------------------------------------------
 */
 
@@ -108,7 +137,9 @@ const sendOrderConfirmationEmail = async (order) => {
     throw new Error("Customer email is missing");
   }
 
-  const customerEmail = String(order.user.email).trim().toLowerCase();
+  const customerEmail = String(order.user.email)
+    .trim()
+    .toLowerCase();
 
   const customerName =
     `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim() ||
@@ -117,9 +148,8 @@ const sendOrderConfirmationEmail = async (order) => {
   console.log("========================================");
   console.log("📦 ORDER CONFIRMATION EMAIL");
   console.log("Order ID:", order._id);
-  console.log("Customer:", customerName);
-  console.log("Customer Email:", customerEmail);
-  console.log("Admin Email:", ADMIN_EMAIL);
+  console.log("Customer:", customerEmail);
+  console.log("Admin:", ADMIN_EMAIL);
   console.log("========================================");
 
   const productsHTML = order.items
@@ -142,7 +172,7 @@ const sendOrderConfirmationEmail = async (order) => {
             Rs. ${item.price * item.quantity}
           </td>
         </tr>
-      `,
+      `
     )
     .join("");
 
@@ -312,14 +342,16 @@ const sendOrderConfirmationEmail = async (order) => {
     </html>
   `;
 
-  // ======================================================
-  // SEND CUSTOMER EMAIL
-  // ======================================================
+  /*
+  |--------------------------------------------------------------------------
+  | CUSTOMER EMAIL
+  |--------------------------------------------------------------------------
+  */
 
   let customerInfo = null;
 
   try {
-    console.log("📧 Sending CUSTOMER email to:", customerEmail);
+    console.log("📧 Sending CUSTOMER email:", customerEmail);
 
     customerInfo = await sendEmail({
       to: customerEmail,
@@ -327,19 +359,18 @@ const sendOrderConfirmationEmail = async (order) => {
       html,
     });
 
-    console.log("✅ CUSTOMER EMAIL ACCEPTED");
-    console.log("Customer accepted:", customerInfo.accepted);
-    console.log("Customer rejected:", customerInfo.rejected);
-    console.log("Customer message ID:", customerInfo.messageId);
+    console.log("✅ CUSTOMER EMAIL SENT");
   } catch (error) {
     console.error("❌ CUSTOMER EMAIL FAILED");
     console.error("Customer:", customerEmail);
     console.error("Error:", error.message);
   }
 
-  // ======================================================
-  // SEND ADMIN EMAIL
-  // ======================================================
+  /*
+  |--------------------------------------------------------------------------
+  | ADMIN EMAIL
+  |--------------------------------------------------------------------------
+  */
 
   let adminInfo = null;
 
@@ -415,7 +446,7 @@ const sendOrderConfirmationEmail = async (order) => {
                 × ${item.quantity}
                 — Rs. ${item.price * item.quantity}
               </li>
-            `,
+            `
           )
           .join("")}
       </ul>
@@ -438,7 +469,7 @@ const sendOrderConfirmationEmail = async (order) => {
       </p>
     `;
 
-    console.log("📧 Sending ADMIN email to:", ADMIN_EMAIL);
+    console.log("📧 Sending ADMIN email:", ADMIN_EMAIL);
 
     adminInfo = await sendEmail({
       to: ADMIN_EMAIL,
@@ -446,10 +477,11 @@ const sendOrderConfirmationEmail = async (order) => {
       html: adminHtml,
     });
 
-    console.log("✅ ADMIN EMAIL ACCEPTED");
+    console.log("✅ ADMIN EMAIL SENT");
   } catch (error) {
     console.error("❌ ADMIN EMAIL FAILED");
-    console.error(error.message);
+    console.error("Admin:", ADMIN_EMAIL);
+    console.error("Error:", error.message);
   }
 
   return {
@@ -457,6 +489,7 @@ const sendOrderConfirmationEmail = async (order) => {
     adminInfo,
   };
 };
+
 /*
 |--------------------------------------------------------------------------
 | Order Status Email
@@ -472,7 +505,9 @@ const sendOrderStatusEmail = async (order) => {
     throw new Error("Customer email is missing");
   }
 
-  const customerEmail = order.user.email;
+  const customerEmail = String(order.user.email)
+    .trim()
+    .toLowerCase();
 
   const customerName =
     `${order.user.firstName || ""} ${order.user.lastName || ""}`.trim() ||
@@ -487,33 +522,27 @@ const sendOrderStatusEmail = async (order) => {
 
   const html = `
     <!DOCTYPE html>
-
     <html>
 
       <head>
         <meta charset="UTF-8" />
-
         <title>Order Status Updated</title>
       </head>
 
-      <body
-        style="
-          margin: 0;
-          padding: 0;
-          background: #f5f5f5;
-          font-family: Arial, sans-serif;
-        "
-      >
+      <body style="
+        margin:0;
+        padding:0;
+        background:#f5f5f5;
+        font-family:Arial,sans-serif;
+      ">
 
-        <div
-          style="
-            max-width: 600px;
-            margin: 30px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-          "
-        >
+        <div style="
+          max-width:600px;
+          margin:30px auto;
+          background:white;
+          padding:30px;
+          border-radius:12px;
+        ">
 
           <h1>
             📦 Order Status Updated
@@ -565,9 +594,7 @@ const sendOrderStatusEmail = async (order) => {
 
   return sendEmail({
     to: customerEmail,
-
     subject: `Order ${order.orderStatus} - ${order._id}`,
-
     html,
   });
 };

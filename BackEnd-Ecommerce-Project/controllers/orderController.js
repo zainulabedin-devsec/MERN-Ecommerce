@@ -128,21 +128,30 @@ const createOrder = async (req, res) => {
     // SEND ORDER CONFIRMATION EMAIL
     // ==================================================
 
-    try {
-      console.log("========================================");
-      console.log("📧 ORDER EMAIL PROCESS");
-      console.log("Order ID:", order._id);
-      console.log("Customer Email:", order.user?.email);
-      console.log("Admin Email:", "toprojecttesting@gmail.com");
-      console.log("========================================");
+    // ==================================================
+    // SEND ORDER CONFIRMATION EMAIL IN BACKGROUND
+    // ==================================================
 
-      await sendOrderConfirmationEmail(order);
+    console.log("========================================");
+    console.log("📧 ORDER EMAIL PROCESS");
+    console.log("Order ID:", order._id);
+    console.log("Customer Email:", order.user?.email);
+    console.log("Admin Email:", "toprojecttesting@gmail.com");
+    console.log("========================================");
 
-      console.log("✅ Customer + Admin emails sent");
-    } catch (emailError) {
-      console.error("❌ Order email failed");
-      console.error(emailError);
-    }
+    sendOrderConfirmationEmail(order)
+      .then((result) => {
+        console.log("========================================");
+        console.log("📧 BACKGROUND ORDER EMAIL PROCESS FINISHED");
+        console.log("Customer:", result.customerInfo ? "SENT" : "FAILED");
+        console.log("Admin:", result.adminInfo ? "SENT" : "FAILED");
+        console.log("========================================");
+      })
+      .catch((error) => {
+        console.error("❌ Background order email process failed:");
+        console.error(error.message);
+      });
+
     // ==================================================
     // RESPONSE
     // ==================================================
