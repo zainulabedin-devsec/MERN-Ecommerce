@@ -125,7 +125,7 @@ const sendOrderConfirmationEmail = async (order) => {
         </p>
 
         <p>
-          <strong>Total:</strong> $${order.totalPrice}
+          <strong>Total:</strong> $${order.totalAmount}
         </p>
 
         <table style="
@@ -192,7 +192,7 @@ const sendOrderConfirmationEmail = async (order) => {
         </p>
 
         <p>
-          <strong>Total:</strong> $${order.totalPrice}
+          <strong>Total:</strong> $${order.totalAmount}
         </p>
 
         <h3>Order Items</h3>
@@ -285,7 +285,7 @@ const sendOrderStatusEmail = async (order) => {
 
         <p>
           <strong>New Status:</strong>
-          ${order.status}
+          ${order.orderStatus}
         </p>
 
         <p style="
@@ -301,7 +301,7 @@ const sendOrderStatusEmail = async (order) => {
 
     const result = await sendEmail({
       to: customerEmail,
-      subject: `📦 Order Status Updated - ${order.status}`,
+      subject: `📦 Order Status Updated - ${order.orderstatus}`,
       html,
     });
 
